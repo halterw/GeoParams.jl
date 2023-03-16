@@ -73,7 +73,7 @@ end
     Ptsc    = 6.0                # iterative time step limiter
     ε       = 1e-6               # nonlinear tolerence
     iterMax = 3e4                # max number of iters
-    nout    = 200                # check frequency
+    nout    = 100                # check frequency
     # Preprocessing
     dx, dy  = Lx/nx, Ly/ny
     dt      = μ0/G0/30.0 # assumes Maxwell time of 4
@@ -178,29 +178,32 @@ end
             # rotate
             Eyx = Exy 
             Tyx_o = Txy_o
-            Exx_rot, Eyy_rot, Exy_rot, Eyx_rot = CartToRot(Exx,Eyy,Exy,Eyx,Q11,Q22,Q12,Q21)
-            Txx_o_rot, Tyy_o_rot, Txy_o_rot, Tyx_o_rot = CartToRot(Txx_o,Tyy_o,Txy_o,Tyx_o,Q11,Q22,Q12,Q21)
+            #Exx_rot, Eyy_rot, Exy_rot, Eyx_rot = CartToRot(Exx,Eyy,Exy,Eyx,Q11,Q22,Q12,Q21)
+            #Txx_o_rot, Tyy_o_rot, Txy_o_rot, Tyx_o_rot = CartToRot(Txx_o,Tyy_o,Txy_o,Tyx_o,Q11,Q22,Q12,Q21)
             # rheology - only viscous
-            η_vep = μ0.*η_vep
-            η_vep = Phasec .*1e23
-            Txx_rot = 2*η_vep*Exx_rot
-            Tyy_rot = 2*η_vep*Eyy_rot
-            Txy_rot = 2*η_vep./anifacv.*Exy_rot
-            Tyx_rot = Txy_rot
+            #η_vep = μ0.*η_vep
+            #η_vep = 1 ./ Phasec# .*1e23
+            Txx = 2*η_ve.*Exx .+ η_ve./η_e.*Txx_o
+            Tyy = 2*η_ve.*Eyy .+ η_ve./η_e.*Tyy_o
+            Txy = 2*η_ve.*Exy .+ η_ve./η_e.*Txy_o#./anifacv
+            Tyx = Txy
             # rotate back
-            Txx, Tyy, Txy, Tyx = RotToCart(Txx_rot,Tyy_rot,Txy_rot,Tyx_rot,Q11,Q22,Q12,Q21)
+            #Txx, Tyy, Txy, Tyx = RotToCart(Txx_rot,Tyy_rot,Txy_rot,Tyx_rot,Q11,Q22,Q12,Q21)
             Tii = (0.5*(Txx.^2 .+ Tyy.^2) .+ Txy.^2).^0.5
             ############### END ADDING
             Txyv[2:end-1,2:end-1].=av(Txy)      # Txyv=0 on boundaries !
             # PT timestep
-            dtVx   .= min(dx,dy)^2.0./av_xa(η_vep)./4.1./Vsc
-            dtVy   .= min(dx,dy)^2.0./av_ya(η_vep)./4.1./Vsc
-            dtPt   .= 4.1.*η_vep./max(nx,ny)./Ptsc
+            bla = 1000.0
+            dtVx   .= min(dx,dy)^2.0./av_xa(η_vep)./4.1./Vsc./bla
+            dtVy   .= min(dx,dy)^2.0./av_ya(η_vep)./4.1./Vsc./bla
+            dtPt   .= 4.1.*η_vep./max(nx,ny)./Ptsc./bla
             # velocities
             Rx     .= .-diff(Pt, dims=1)./dx .+ diff(Txx, dims=1)./dx .+ diff(Txyv[2:end-1,:], dims=2)./dy
             Ry     .= .-diff(Pt, dims=2)./dy .+ diff(Tyy, dims=2)./dy .+ diff(Txyv[:,2:end-1], dims=1)./dx .+ av_ya(Rog)
             dVxdt  .= dVxdt.*(1-Vdmp/nx) .+ Rx
             dVydt  .= dVydt.*(1-Vdmp/ny) .+ Ry
+            #dVxdt  .= dVxdt .+ Rx
+            #dVydt  .= dVydt .+ Ry
             Vx[2:end-1,:] .= Vx[2:end-1,:] .+ dVxdt.*dtVx
             Vy[:,2:end-1] .= Vy[:,2:end-1] .+ dVydt.*dtVy
             # convergence check
