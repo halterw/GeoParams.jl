@@ -129,10 +129,6 @@ end
     ηc      = ones(Dat,nx,ny)
     Phasec  = ones(Int, nx  ,ny  )
     Phasev  = ones(Int, nx+1,ny+1)
-    aniangl = zeros(Dat, nx  ,ny  ) .+ 135.0.*pi/180.0 .- pi/2 # anisotropy layer angle (w.r. to horizontal) [radians]
-    anifacv = ones(Dat, nx  ,ny  ) * 10.0               # viscous anisotropy factor []
-    aniface = ones(Dat, nx  ,ny  ) * 1.0                # elastic anisotropy factor []
-    anifacp = ones(Dat, nx  ,ny  ) * 1.0                # plaastic anisotropy factor []
     # Initial condition
     xc, yc  = LinRange(dx/2, Lx-dx/2, nx), LinRange(dy/2, Ly-dy/2, ny)
     xc, yc  = LinRange(dx/2, Lx-dx/2, nx), LinRange(dy/2, Ly-dy/2, ny)
@@ -155,13 +151,6 @@ end
     for it = 1:nt
         iter=1; err=2*ε; err_evo1=Float64[]; err_evo2=Float64[]
         Txx_o.=Txx; Tyy_o.=Tyy; Txy_o.=av(Txyv); Txyv_o.=Txyv; λ.=0.0; P_o .= Pt
-        ############### START ADDING
-        # Transformation matrix: towards principal plane
-        Q11 = cos.(aniangl)
-        Q22 = cos.(aniangl)
-        Q12 = sin.(aniangl)
-        Q21 =-sin.(aniangl)
-        ############### END ADDING
         local itg
         while (err>ε && iter<=iterMax)
             # divergence - pressure
@@ -175,25 +164,16 @@ end
             # Update stresses using GeoParams
             #compute_τij_stagcenter!(Txx, Tyy, Txy, Tii, η_vep, Exx, Eyy, Exyv, Pt, Txx_o, Tyy_o, Txyv_o, Phasec, Phasev, MatParam, dt) 
             ############### START ADDING
-            # rotate
-            Eyx = Exy 
-            Tyx_o = Txy_o
-            #Exx_rot, Eyy_rot, Exy_rot, Eyx_rot = CartToRot(Exx,Eyy,Exy,Eyx,Q11,Q22,Q12,Q21)
-            #Txx_o_rot, Tyy_o_rot, Txy_o_rot, Tyx_o_rot = CartToRot(Txx_o,Tyy_o,Txy_o,Tyx_o,Q11,Q22,Q12,Q21)
-            # rheology - only viscous
-            #η_vep = μ0.*η_vep
-            #η_vep = 1 ./ Phasec# .*1e23
+            # rheology - visco-elastic
             Txx = 2*η_ve.*Exx .+ η_ve./η_e.*Txx_o
             Tyy = 2*η_ve.*Eyy .+ η_ve./η_e.*Tyy_o
-            Txy = 2*η_ve.*Exy .+ η_ve./η_e.*Txy_o#./anifacv
-            Tyx = Txy
-            # rotate back
-            #Txx, Tyy, Txy, Tyx = RotToCart(Txx_rot,Tyy_rot,Txy_rot,Tyx_rot,Q11,Q22,Q12,Q21)
+            Txy = 2*η_ve.*Exy .+ η_ve./η_e.*Txy_o
             Tii = (0.5*(Txx.^2 .+ Tyy.^2) .+ Txy.^2).^0.5
+            η_vep = η_ve
             ############### END ADDING
             Txyv[2:end-1,2:end-1].=av(Txy)      # Txyv=0 on boundaries !
             # PT timestep
-            bla = 1000.0
+            bla = 1.0
             dtVx   .= min(dx,dy)^2.0./av_xa(η_vep)./4.1./Vsc./bla
             dtVy   .= min(dx,dy)^2.0./av_ya(η_vep)./4.1./Vsc./bla
             dtPt   .= 4.1.*η_vep./max(nx,ny)./Ptsc./bla
@@ -202,8 +182,6 @@ end
             Ry     .= .-diff(Pt, dims=2)./dy .+ diff(Tyy, dims=2)./dy .+ diff(Txyv[:,2:end-1], dims=1)./dx .+ av_ya(Rog)
             dVxdt  .= dVxdt.*(1-Vdmp/nx) .+ Rx
             dVydt  .= dVydt.*(1-Vdmp/ny) .+ Ry
-            #dVxdt  .= dVxdt .+ Rx
-            #dVydt  .= dVydt .+ Ry
             Vx[2:end-1,:] .= Vx[2:end-1,:] .+ dVxdt.*dtVx
             Vy[:,2:end-1] .= Vy[:,2:end-1] .+ dVydt.*dtVy
             # convergence check
@@ -234,4 +212,4 @@ end
     return evo_t, evo_Txx, to
 end
 
-@time evo_t, evo_Txx_GP, to_GP = Stokes2D_vep(true, 3) # 2nd argument = timesteps  9.368483 seconds (2.73 M allocations: 13.804 GiB, 8.24% gc time)
+@time evo_t, evo_Txx_GP, to_GP = Stokes2D_vep(true, 20) # 2nd argument = timesteps  9.368483 seconds (2.73 M allocations: 13.804 GiB, 8.24% gc time)

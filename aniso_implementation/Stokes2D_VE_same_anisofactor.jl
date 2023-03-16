@@ -203,8 +203,6 @@ end
             Ry     .= .-diff(Pt, dims=2)./dy .+ diff(Tyy, dims=2)./dy .+ diff(Txyv[:,2:end-1], dims=1)./dx .+ av_ya(Rog)
             dVxdt  .= dVxdt.*(1-Vdmp/nx) .+ Rx
             dVydt  .= dVydt.*(1-Vdmp/ny) .+ Ry
-            #dVxdt  .= dVxdt .+ Rx
-            #dVydt  .= dVydt .+ Ry
             Vx[2:end-1,:] .= Vx[2:end-1,:] .+ dVxdt.*dtVx
             Vy[:,2:end-1] .= Vy[:,2:end-1] .+ dVydt.*dtVy
             # convergence check
