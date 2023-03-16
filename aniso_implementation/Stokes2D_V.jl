@@ -20,7 +20,7 @@ function CartToRot(Axx,Ayy,Axy,Ayx,Q11,Q22,Q12,Q21)
     return Axx_rot, Ayy_rot, Axy_rot, Ayx_rot
 end
 # Rotated to Cartesian coordinate system
-function CartToRot(Axx_rot,Ayy_rot,Axy_rot,Ayx_rot,Q11,Q22,Q12,Q21)
+function RotToCart(Axx_rot,Ayy_rot,Axy_rot,Ayx_rot,Q11,Q22,Q12,Q21)
     Axx =  Q11 .* (Axx_rot .* Q11 + Ayx_rot .* Q21) + Q21 .* (Axy_rot .* Q11 + Ayy_rot .* Q21)
     Ayy =  Q12 .* (Axx_rot .* Q12 + Ayx_rot .* Q22) + Q22 .* (Axy_rot .* Q12 + Ayy_rot .* Q22)
     Axy =  Q12 .* (Axx_rot .* Q11 + Ayx_rot .* Q21) + Q22 .* (Axy_rot .* Q11 + Ayy_rot .* Q21)
@@ -175,16 +175,20 @@ end
             # Update stresses using GeoParams
             #compute_τij_stagcenter!(Txx, Tyy, Txy, Tii, η_vep, Exx, Eyy, Exyv, Pt, Txx_o, Tyy_o, Txyv_o, Phasec, Phasev, MatParam, dt) 
             ############### START ADDING
-            Eyx = Exy#, Tyx_o = Txy_o
+            # rotate
+            Eyx = Exy 
+            Tyx_o = Txy_o
             Exx_rot, Eyy_rot, Exy_rot, Eyx_rot = CartToRot(Exx,Eyy,Exy,Eyx,Q11,Q22,Q12,Q21)
-            #Txx_o_rot, Tyy_o_rot, Txy_o_rot, Tyx_o_rot = CartToRot(Txx_o,Tyy_o,Txy_o,Tyx_o,Q11,Q22,Q12,Q21)
-            # if only viscous
+            Txx_o_rot, Tyy_o_rot, Txy_o_rot, Tyx_o_rot = CartToRot(Txx_o,Tyy_o,Txy_o,Tyx_o,Q11,Q22,Q12,Q21)
+            # rheology - only viscous
             η_vep = μ0.*η_vep
-            η_vep = Phasec .*1e18
-            Txx = 2*η_vep*Exx
-            Tyy = 2*η_vep*Eyy
-            Txy = 2*η_vep./anifacv.*Exy
-            #Txy = 2*η_vep*Exy
+            η_vep = Phasec .*1e23
+            Txx_rot = 2*η_vep*Exx_rot
+            Tyy_rot = 2*η_vep*Eyy_rot
+            Txy_rot = 2*η_vep./anifacv.*Exy_rot
+            Tyx_rot = Txy_rot
+            # rotate back
+            Txx, Tyy, Txy, Tyx = RotToCart(Txx_rot,Tyy_rot,Txy_rot,Tyx_rot,Q11,Q22,Q12,Q21)
             Tii = (0.5*(Txx.^2 .+ Tyy.^2) .+ Txy.^2).^0.5
             ############### END ADDING
             Txyv[2:end-1,2:end-1].=av(Txy)      # Txyv=0 on boundaries !
