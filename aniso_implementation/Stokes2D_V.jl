@@ -174,20 +174,19 @@ end
             Exy    .= av(Exyv)
             # Update stresses using GeoParams
             #compute_τij_stagcenter!(Txx, Tyy, Txy, Tii, η_vep, Exx, Eyy, Exyv, Pt, Txx_o, Tyy_o, Txyv_o, Phasec, Phasev, MatParam, dt) 
-            ##=
             ############### START ADDING
             Eyx = Exy#, Tyx_o = Txy_o
             Exx_rot, Eyy_rot, Exy_rot, Eyx_rot = CartToRot(Exx,Eyy,Exy,Eyx,Q11,Q22,Q12,Q21)
             #Txx_o_rot, Tyy_o_rot, Txy_o_rot, Tyx_o_rot = CartToRot(Txx_o,Tyy_o,Txy_o,Tyx_o,Q11,Q22,Q12,Q21)
             # if only viscous
             η_vep = μ0.*η_vep
+            η_vep = Phasec .*1e18
             Txx = 2*η_vep*Exx
             Tyy = 2*η_vep*Eyy
             Txy = 2*η_vep./anifacv.*Exy
             #Txy = 2*η_vep*Exy
             Tii = (0.5*(Txx.^2 .+ Tyy.^2) .+ Txy.^2).^0.5
             ############### END ADDING
-            #=#
             Txyv[2:end-1,2:end-1].=av(Txy)      # Txyv=0 on boundaries !
             # PT timestep
             dtVx   .= min(dx,dy)^2.0./av_xa(η_vep)./4.1./Vsc
