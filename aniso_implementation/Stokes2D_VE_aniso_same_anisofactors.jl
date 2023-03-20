@@ -131,8 +131,8 @@ end
     ηc      = ones(Dat,nx,ny)
     Phasec  = ones(Int, nx  ,ny  )
     Phasev  = ones(Int, nx+1,ny+1)
-    aniangl = zeros(Dat, nx  ,ny  ) .+ 150.0.*pi/180.0 .- pi/2 # anisotropy layer angle (w.r. to horizontal) [radians]
-    anifacve = ones(Dat, nx  ,ny  ) * 10.0               # visco-elastic anisotropy factor []
+    aniangl = zeros(Dat, nx  ,ny  ) .+ 205.0.*pi/180.0 .- pi/2 # anisotropy layer angle (w.r. to horizontal) [radians]
+    anifacve = ones(Dat, nx  ,ny  ) * 2.0               # visco-elastic anisotropy factor []
     # Initial condition
     xc, yc  = LinRange(dx/2, Lx-dx/2, nx), LinRange(dy/2, Ly-dy/2, ny)
     xc, yc  = LinRange(dx/2, Lx-dx/2, nx), LinRange(dy/2, Ly-dy/2, ny)
